@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    margin-top: 20px;
+    color: #333;
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 5px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.cell {
+    background-color: #fff;
+    border: 2px solid #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    height: 100px;
+    width: 100px;
+}
+
+.cell:hover {
+    background-color: #f1f1f1;
+}
+
+.status {
+    margin-top: 20px;
+    font-size: 20px;
+}
+
+button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #333;
+    color: #fff;
+    border: none;
+}
+/* Add this at the end of your existing CSS */
+.winning-line {
+    position: absolute;
+    width: 300px;
+    height: 5px;
+    background-color: red;
+    transform-origin: center;
+    z-index: 1;
+}
+
+.game-container {
+    position: relative;
+    display: inline-block;
+    margin-top: 30px;
+}
+</style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <div class="game-container">
+        <div class="game-board">
+            <div class="cell" id="cell-0" onclick="handleClick(0)"></div>
+            <div class="cell" id="cell-1" onclick="handleClick(1)"></div>
+            <div class="cell" id="cell-2" onclick="handleClick(2)"></div>
+            <div class="cell" id="cell-3" onclick="handleClick(3)"></div>
+            <div class="cell" id="cell-4" onclick="handleClick(4)"></div>
+            <div class="cell" id="cell-5" onclick="handleClick(5)"></div>
+            <div class="cell" id="cell-6" onclick="handleClick(6)"></div>
+            <div class="cell" id="cell-7" onclick="handleClick(7)"></div>
+            <div class="cell" id="cell-8" onclick="handleClick(8)"></div>
+        </div>
+    </div>
+    <div class="status" id="status"></div>
+    <button onclick="resetGame()">Reset Game</button>
+    <script src="script.js"></script>
+</body>
+<script>
+const cells = document.querySelectorAll(".cell");
+const statusDisplay = document.getElementById("status");
+let currentPlayer = "X";
+let gameActive = true;
+let gameState = ["", "", "", "", "", "", "", "", ""];
+
+const winningConditions = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+];
+
+function handleClick(clickedCellIndex) {
+    if (gameState[clickedCellIndex] !== "" || !gameActive) {
+        return;
+    }
+
+    gameState[clickedCellIndex] = currentPlayer;
+    document.getElementById(`cell-${clickedCellIndex}`).textContent = currentPlayer;
+
+    checkResult();
+}
+
+function checkResult() {
+    let roundWon = false;
+    let winningCombo = null;
+
+    for (let i = 0; i < winningConditions.length; i++) {
+        const [a, b, c] = winningConditions[i];
+        if (gameState[a] === "" || gameState[b] === "" || gameState[c] === "") {
+            continue;
+        }
+        if (gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+            roundWon = true;
+            winningCombo = [a, b, c];  // Store the winning combination
+            break;
+        }
+    }
+
+    if (roundWon) {
+        statusDisplay.textContent = `Player ${currentPlayer} has won!`;
+        drawWinningLine(winningCombo);  // Draw the line
+        gameActive = false;
+        return;
+    }
+
+    if (!gameState.includes("")) {
+        statusDisplay.textContent = `It's a draw!`;
+        gameActive = false;
+        return;
+    }
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusDisplay.textContent = `It's ${currentPlayer}'s turn`;
+}
+
+function drawWinningLine(combo) {
+    const cellSize = 105; // Width and height of each cell including the gap (100px cell + 5px gap)
+    const positions = {
+        0: [0, 0], 1: [1, 0], 2: [2, 0],
+        3: [0, 1], 4: [1, 1], 5: [2, 1],
+        6: [0, 2], 7: [1, 2], 8: [2, 2]
+    };
+
+    const [startIndex, , endIndex] = combo;
+    const start = positions[startIndex];
+    const end = positions[endIndex];
+
+    const line = document.createElement("div");
+    line.classList.add("winning-line");
+
+    const deltaX = end[0] - start[0];
+    const deltaY = end[1] - start[1];
+    const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);  // Calculate the angle of the line
+
+    const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY) * cellSize;  // Calculate the length of the line
+
+    // Centering the line between the two cells
+    const centerX = (start[0] + end[0]) / 2 * cellSize + cellSize / 2;
+    const centerY = (start[1] + end[1]) / 2 * cellSize + cellSize / 2;
+
+    line.style.width = `${length}px`;
+    line.style.transform = `rotate(${angle}deg)`;
+    line.style.top = `${centerY - 2.5}px`; // Adjust by half the height of the line (2.5px)
+    line.style.left = `${centerX - length / 2}px`; // Center the line horizontally
+
+    document.querySelector(".game-container").appendChild(line);
+}
+
+function resetGame() {
+    gameActive = true;
+    currentPlayer = "X";
+    gameState = ["", "", "", "", "", "", "", "", ""];
+    statusDisplay.textContent = `It's ${currentPlayer}'s turn`;
+    cells.forEach(cell => (cell.textContent = ""));
+
+    // Remove any winning line
+    const line = document.querySelector(".winning-line");
+    if (line) {
+        line.remove();
+    }
+}
+</script>
+</html>
